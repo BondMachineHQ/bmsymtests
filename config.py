@@ -1,3 +1,5 @@
 numterations=1
+numsamples=10
 checksimulation=True
-checkhardware=True
+checkbmhardware=True
+checkhlshardware=True
