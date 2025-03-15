@@ -1,0 +1,3 @@
+numterations=1
+checksimulation=True
+checkhardware=True
