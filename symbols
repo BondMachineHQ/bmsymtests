@@ -1,0 +1,5 @@
+from sympy import *
+x = Symbol('x', real=False)
+y = Symbol('y', real=False)
+z = Symbol('z', real=False)
+symbols = [x, y, z]
