@@ -3,3 +3,10 @@ x = Symbol('x', real=False)
 y = Symbol('y', real=False)
 z = Symbol('z', real=False)
 symbols = [x, y, z]
+testRanges = {'real: x': list(np.arange(-1,1,1)),
+        'imag: x': list(np.arange(-1,1,1)),
+        'real: y': list(np.arange(-1,1,1)),
+        'imag: y': list(np.arange(-1,1,1)),
+        'real: z': list(np.arange(-1,1,1)),
+        'imag: z': list(np.arange(-1,1,1))
+        }

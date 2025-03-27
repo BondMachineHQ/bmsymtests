@@ -1,3 +1,4 @@
+ROOTDIR=.
 WORKING_DIR=working_dir
 CURRENT_DIR=$(shell pwd)
 SOURCE_FLEXPY=generated.py
