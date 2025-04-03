@@ -10,7 +10,7 @@ BASM_ARGS=-disable-dynamical-matching -chooser-min-word-size -chooser-force-same
 MAPFILE=zedboard_maps.json
 SHOWARGS=-dot-detail 5
 SHOWRENDERER=dot -Tpng > bondmachine.png
-EXTRACLEAN=*.csv *.seq num_outputs.txt bmapi.json bondmachine.png generated.py statistics.json zedboard*
+EXTRACLEAN=*.csv *.seq num_outputs.txt bmapi.json bondmachine.png statistics.json zedboard*
 include bmapi.mk
 include deploy.mk
 include simbatch.mk
