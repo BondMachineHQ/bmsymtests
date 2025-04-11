@@ -18,10 +18,10 @@ addargrealnumfull,25.0,0.0
 addargrealnumimag,5.0,0.0
 addargrealnumreal,5.0,0.0
 multargfullargfull,1.0,0.0
-multargfullargimag,0.0,0.0
-multargfullargreal,0.0,0.0
-multargfullnumfull,0.0,0.0
-multargfullnumimag,0.0,0.0
+multargfullargimag,1.0,0.0
+multargfullargreal,1.0,0.0
+multargfullnumfull,25.0,0.0
+multargfullnumimag,5.0,0.0
 multargfullnumreal,5.0,0.0
 multargimagargfull,0.0,0.0
 multargimagargimag,0.0,0.0
