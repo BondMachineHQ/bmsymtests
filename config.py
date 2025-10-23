@@ -1,6 +1,6 @@
 import os
 os.environ["PATH"]=os.environ["PATH"]+":/home/mirko/.go/bin"
 
-singleRun=False
+singleRun=True
 singleRunPatch=False
-fullRun=True
+fullRun=False
