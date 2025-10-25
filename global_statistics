@@ -1,5 +1,5 @@
 ,bsimoccurrences,bsimerror,bmoccurrences,bmerror
-addargfullargfull,1.0,0.0,0.0,0.0
+addargfullargfull,1.0,0.0,1.0,0.0
 addargfullargimag,1.0,0.0,0.0,0.0
 addargfullargreal,1.0,0.0,0.0,0.0
 addargfullnumfull,25.0,0.0,0.0,0.0
@@ -97,7 +97,7 @@ expargreal-expprec-6,3.0,103.0658356179131,0.0,0.0
 expargreal-expprec-7,3.0,29.979837629074304,0.0,0.0
 expargreal-expprec-8,3.0,7.278824339959858,0.0,0.0
 expargreal-expprec-9,3.0,1.490733079255081,0.0,0.0
-multargfullargfull,1.0,0.0,0.0,0.0
+multargfullargfull,1.0,0.0,1.0,0.0
 multargfullargimag,1.0,0.0,0.0,0.0
 multargfullargreal,1.0,0.0,0.0,0.0
 multargfullnumfull,25.0,0.0,0.0,0.0
