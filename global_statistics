@@ -108,13 +108,13 @@ multargimagargimag,1.0,0.0,0.0,0.0
 multargimagargreal,1.0,0.0,0.0,0.0
 multargimagnumfull,25.0,0.0,0.0,0.0
 multargimagnumimag,5.0,0.0,0.0,0.0
-multargimagnumreal,5.0,0.0,0.0,0.0
+multargimagnumreal,6.0,0.0,1.0,0.0
 multargrealargfull,1.0,0.0,0.0,0.0
 multargrealargimag,1.0,0.0,0.0,0.0
 multargrealargreal,1.0,0.0,0.0,0.0
 multargrealnumfull,25.0,0.0,0.0,0.0
 multargrealnumimag,5.0,0.0,0.0,0.0
-multargrealnumreal,5.0,0.0,0.0,0.0
+multargrealnumreal,6.0,0.0,1.0,0.0
 numfull,0.0,0.0,0.0,0.0
 numimag,0.0,0.0,0.0,0.0
 numreal,0.0,0.0,0.0,0.0
