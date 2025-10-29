@@ -7,3 +7,5 @@ singleRunPatch=False
 fullRun=False
 runSimbatchTests=False
 runBmsimTests=False
+
+benchcore=False
