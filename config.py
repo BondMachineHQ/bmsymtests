@@ -4,6 +4,7 @@ os.environ["PATH"]=os.environ["PATH"]+":/home/mirko/.go/bin"
 
 debug=False
 singleRun=False
+runMode=False
 singleRunPatch=False
 fullRun=False
 runSimbatchTests=False
