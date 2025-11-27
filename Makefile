@@ -245,10 +245,20 @@ endif
 
 ifneq ($(SOURCE_FLEXPY), )
 ifeq ($(MAINTARGET), cluster)
-$(error Unsupported)
+	CLUSTER_COMMAND=flexpy -e $(SOURCE_FLEXPY) -o bondmachine.bmeta $(FLEXPY_ARGS) ; basm $(BASM_ARGS) $(BMINFO_ARGS) -oprefix edgenode -co cluster.json $(BASM_LIB_FILES) $(FLEXPY_LIB)/*.basm $(WORKING_DIR)/bondmachine.bmeta
+	SOURCE_BASM_FILTERED=$(shell for i in $(SOURCE_BASM) ; do echo -n $$i | grep -v ".bmeta" ; done)
+	CLUSTER_SOURCE=basm
 endif
 	SOURCE_COMMAND=flexpy -e $(SOURCE_FLEXPY) -o $(WORKING_DIR)/bondmachine.basm $(FLEXPY_ARGS) ; basm $(BASM_ARGS) $(BMINFO_ARGS) -o $(WORKING_DIR)/bondmachine.json $(WORKING_DIR)/bondmachine.basm $(FLEXPY_LIB)/*.basm
 	SOURCE=$(SOURCE_FLEXPY)
+endif
+
+ifneq ($(SOURCE_FRAGTESTER), )
+ifeq ($(MAINTARGET), cluster)
+$(error Unsupported)
+endif
+	SOURCE_COMMAND=fragtester -neuron-lib-path $(FRAGTESTER_LIBRARY) -save-basm $(WORKING_DIR)/bondmachine.basm $(FRAGTESTER_ARGS) -fragment-file $(SOURCE_FRAGTESTER) ; basm $(BASM_ARGS) $(BMINFO_ARGS) -o $(WORKING_DIR)/bondmachine.json $(WORKING_DIR)/bondmachine.basm $(FRAGTESTER_LIBRARY)/*.basm
+	SOURCE=$(FRAGTESTER_LIBRARY)/$(SOURCE_FRAGTESTER)
 endif
 
 ifneq ($(SOURCE_NEURALBOND), )
@@ -301,6 +311,15 @@ endif
 	SOURCE=$(SOURCE_MELBOND)
 endif
 
+##### Benchmark core v2 attachment
+
+ifneq ($(BENCHCOREV2_FILE), )
+	SOURCE_COMMAND+= ; bondmachine -bondmachine-file $(WORKING_DIR)/bondmachine.json -attach-benchmark-core-v2 `cat $(BENCHCOREV2_FILE)`
+else
+ifneq ($(BENCHCOREV2), )
+	SOURCE_COMMAND+= ; bondmachine -bondmachine-file $(WORKING_DIR)/bondmachine.json -attach-benchmark-core-v2 $(BENCHCOREV2)
+endif
+endif
 
 ##### Arguments processing
 
@@ -319,13 +338,6 @@ ifneq ($(BENCHCORE), )
 else
 	BENCHCORE_ARGS=
 endif
-
-ifneq ($(BENCHCOREV2), )
-	BENCHCOREV2_ARGS=-attach-benchmark-core-v2 $(BENCHCOREV2)
-else
-	BENCHCOREV2_ARGS=
-endif
-
 
 ifneq ($(SHOWARGS), )
 	SHOW_ARGS=$(SHOWARGS)
@@ -638,7 +650,7 @@ $(WORKING_DIR)/bondmachine_target: $(SOURCE) | $(WORKING_DIR) checkenv
 
 $(WORKING_DIR)/hdl_target:  $(WORKING_DIR)/bondmachine_target | $(WORKING_DIR) checkenv
 	@echo -e "$(PJP)$(INFOC)[HDL generation begin]$(DEFC) - $(WARNC)[Target: $@] $(DEFC)"
-	bondmachine -bondmachine-file $(WORKING_DIR)/bondmachine.json -create-verilog -verilog-mapfile $(MAPFILE) -verilog-flavor $(BOARD) $(BM_ARGS) $(BENCHCORE_ARGS) $(BENCHCOREV2_ARGS) $(COUNTER_ARGS) $(SLOW_ARGS) $(BASYS3_7SEG_ARGS) $(BASYS3_LEDS_ARGS) $(IB_LEDS_ARGS) $(IF_LEDS_ARGS) $(I4_LEDS_ARGS) $(PS2IOKBD_ARGS) $(VGATEXT_ARGS) $(ETHERBOND_ARGS) $(UDPBOND_ARGS) $(BONDIRECT_ARGS) $(BMAPI_ARGS) $(VERILOG_OPTIONS) $(BMINFO_ARGS) $(BMREQS_ARGS) $(BMOPT_ARGS) $(BMRANGES)
+	bondmachine -bondmachine-file $(WORKING_DIR)/bondmachine.json -create-verilog -verilog-mapfile $(MAPFILE) -verilog-flavor $(BOARD) $(BM_ARGS) $(BENCHCORE_ARGS) $(COUNTER_ARGS) $(SLOW_ARGS) $(BASYS3_7SEG_ARGS) $(BASYS3_LEDS_ARGS) $(IB_LEDS_ARGS) $(IF_LEDS_ARGS) $(I4_LEDS_ARGS) $(PS2IOKBD_ARGS) $(VGATEXT_ARGS) $(ETHERBOND_ARGS) $(UDPBOND_ARGS) $(BONDIRECT_ARGS) $(BMAPI_ARGS) $(VERILOG_OPTIONS) $(BMINFO_ARGS) $(BMREQS_ARGS) $(BMOPT_ARGS) $(BMRANGES)
 	echo > $(WORKING_DIR)/bondmachine.sv
 	for i in `ls *.v | sort -d` ; do cat $$i >> $(WORKING_DIR)/bondmachine.sv ; done
 	rm -f *.v
@@ -832,6 +844,12 @@ endif
 	@echo -e "$(PJP)$(INFOC)[BondMachine simulation end]$(DEFC)"
 	@echo
 
+.PHONY: simrules
+simrules:
+ifndef SIMBOX_FILE
+	$(error SIMBOX_FILE is undefined)
+endif
+	@simbox -simbox-file $(SIMBOX_FILE) -list
 
 simbatch: $(WORKING_DIR)/bondmachine_target | $(WORKING_DIR) checkenv
 ifndef SIMBATCH_INPUT_DATASET
