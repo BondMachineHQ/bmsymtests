@@ -101,6 +101,9 @@ endif
 PROJECT_NAME=$(shell basename `pwd`)
 PJP=$(PJPC)"[Project: $(PROJECT_NAME)]"$(DEFC)" - "
 
+# Path to cached bitstream file (optional)
+BITSTREAM_CACHE ?=
+
 ##### Toolchain selection
 
 ifndef BOARD
@@ -115,14 +118,18 @@ ifeq ($(shell [[ $(BOARD) == "basys3" || $(BOARD) == "zedboard"  || $(BOARD) == 
 	SYNTHESIS_TARGET=$(WORKING_DIR)/vivado_synthesis
 	IMPLEMENTATION_TARGET=$(WORKING_DIR)/vivado_implementation
 	BITSTREAM_TARGET=$(WORKING_DIR)/vivado_bitstream
+	BITCACHE_TARGET=$(WORKING_DIR)/vivado_bitcache
+	BITCACHE_PUBLISH=$(WORKING_DIR)/vivado_bitcache_publish
 	PROGRAM_TARGET=$(WORKING_DIR)/vivado_program
 	FAST_PROGRAM_TARGET=$(WORKING_DIR)/vivado_fast_program
 	ACCELERATOR_TARGET=$(WORKING_DIR)/vivado_accelerator
 	DESIGN_TARGET=$(WORKING_DIR)/vivado_design_creation
 	DESIGN_SYNTHESIS_TARGET=$(WORKING_DIR)/vivado_design_synthesis
 	DESIGN_IMPLEMENTATION_TARGET=$(WORKING_DIR)/vivado_design_implementation
-	DESIGN_BISTREAM_TARGET=$(WORKING_DIR)/vivado_design_bitstream
-	EXPORT_HARDWARD_TARGET=$(WORKING_DIR)/vivado_export_hardware
+	DESIGN_BITSTREAM_TARGET=$(WORKING_DIR)/vivado_design_bitstream
+	DESIGN_BITCACHE_TARGET=$(WORKING_DIR)/vivado_design_bitcache
+	DESIGN_BITCACHE_PUBLISH=$(WORKING_DIR)/vivado_design_bitcache_publish
+	EXPORT_HARDWARE_TARGET=$(WORKING_DIR)/vivado_export_hardware
 	DEVICETREE_TARGET=$(WORKING_DIR)/vivado_devicetree
 	KERNEL_MODULE_TARGET=$(WORKING_DIR)/vivado_kernel_module
 	BUILDROOT_TARGET=$(WORKING_DIR)/vivado_buildroot
@@ -136,6 +143,7 @@ ifeq ($(shell [[ $(BOARD) == "max1000" || $(BOARD) == "de10nano" ]] && echo true
 	SYNTHESIS_TARGET=$(WORKING_DIR)/quartus_synthesis
 	IMPLEMENTATION_TARGET=$(WORKING_DIR)/quartus_implementation
 	BITSTREAM_TARGET=$(WORKING_DIR)/quartus_bitstream
+	BITCACHE_TARGET=$(WORKING_DIR)/quartus_bitcache
 	PROGRAM_TARGET=$(WORKING_DIR)/quartus_program
 endif
 
@@ -146,6 +154,7 @@ ifeq ($(shell [[ $(BOARD) == "ice40lp1k" || $(BOARD) == "icefun" || $(BOARD) == 
 	SYNTHESIS_TARGET=$(WORKING_DIR)/icestorm_synthesis
 	IMPLEMENTATION_TARGET=$(WORKING_DIR)/icestorm_implementation
 	BITSTREAM_TARGET=$(WORKING_DIR)/icestorm_bitstream
+	BITCACHE_TARGET=$(WORKING_DIR)/icestorm_bitcache
 	PROGRAM_TARGET=$(WORKING_DIR)/icestorm_program
 endif
 
@@ -317,7 +326,7 @@ ifneq ($(BENCHCOREV2_FILE), )
 	SOURCE_COMMAND+= ; bondmachine -bondmachine-file $(WORKING_DIR)/bondmachine.json -attach-benchmark-core-v2 `cat $(BENCHCOREV2_FILE)`
 else
 ifneq ($(BENCHCOREV2), )
-	SOURCE_COMMAND+= ; bondmachine -bondmachine-file $(WORKING_DIR)/bondmachine.json -attach-benchmark-core-v2 $(BENCHCOREV2)
+	SOURCE_COMMAND+= ; bondmachine -bondmachine-file $(WORKING_DIR)/bondmachine.json -attach-benchmark-core-v2-file $(BENCHCOREV2)
 endif
 endif
 
@@ -588,13 +597,17 @@ hdl: $(WORKING_DIR)/hdl_target | $(WORKING_DIR) checkenv
 project: $(PROJECT_TARGET) | $(WORKING_DIR) checkenv
 synthesis: $(SYNTHESIS_TARGET) | $(WORKING_DIR) checkenv
 implementation: $(IMPLEMENTATION_TARGET) | $(WORKING_DIR) checkenv
+bitcache: $(BITCACHE_TARGET) | $(WORKING_DIR) checkenv
+bitcache_publish: $(BITCACHE_PUBLISH) | $(WORKING_DIR) checkenv
 bitstream: $(BITSTREAM_TARGET) | $(WORKING_DIR) checkenv
 design: $(DESIGN_TARGET) | $(WORKING_DIR) checkenv
 accelerator: $(ACCELERATOR_TARGET) | $(WORKING_DIR) checkenv
 design_synthesis: $(DESIGN_SYNTHESIS_TARGET) | $(WORKING_DIR) checkenv
 design_implementation: $(DESIGN_IMPLEMENTATION_TARGET) | $(WORKING_DIR) checkenv
-design_bitstream: $(DESIGN_BISTREAM_TARGET) | $(WORKING_DIR) checkenv
-export_hardware: $(EXPORT_HARDWARD_TARGET) | $(WORKING_DIR) checkenv
+design_bitstream: $(DESIGN_BITSTREAM_TARGET) | $(WORKING_DIR) checkenv
+design_bitcache: $(DESIGN_BITCACHE_TARGET) | $(WORKING_DIR) checkenv
+design_bitcache_publish: $(DESIGN_BITCACHE_PUBLISH) | $(WORKING_DIR) checkenv
+export_hardware: $(EXPORT_HARDWARE_TARGET) | $(WORKING_DIR) checkenv
 devicetree: $(DEVICETREE_TARGET) | $(WORKING_DIR) checkenv
 kernel_module: $(KERNEL_MODULE_TARGET) | $(WORKING_DIR) checkenv
 buildroot: $(BUILDROOT_TARGET) | $(WORKING_DIR) checkenv
@@ -679,7 +692,7 @@ bmapprun: $(WORKING_DIR)/bmapp_target program | $(WORKING_DIR) checkenv
 	@echo
 
 .PHONY: deploy
-deploy: $(WORKING_DIR)/vivado_design_bitstream | $(WORKING_DIR) checkenv
+deploy: $(WORKING_DIR)/vivado_design_bitcache $(WORKING_DIR)/vivado_design_bitstream | $(WORKING_DIR) checkenv
 	@echo -e "$(PJP)$(INFOC)[BondMachine deploy begin]$(DEFC) - $(WARNC)[Target: $@] $(DEFC)"
 ifeq ($(DEPLOY_TYPE),ssh)
 ifndef DEPLOY_USER
@@ -1090,6 +1103,20 @@ $(WORKING_DIR)/quartus_implementation: $(WORKING_DIR)/quartus_synthesis | $(WORK
 	@echo -e "$(PJP)$(INFOC)[Quartus toolchain - implementation end]$(DEFC)"
 	@echo
 
+$(WORKING_DIR)/quartus_bitcache: $(WORKING_DIR)/quartus_creation | $(WORKING_DIR) checkenv
+	@if [ -n "$(BITSTREAM_CACHE)" ] && [ -f "$(BITSTREAM_CACHE)" ]; then \
+		echo -e "$(PJP)$(INFOC)[Quartus toolchain - using cached bitstream]$(DEFC)"; \
+		touch $(WORKING_DIR)/quartus_bitcache; \
+		touch $(WORKING_DIR)/quartus_synthesis; \
+		touch $(WORKING_DIR)/quartus_implementation; \
+		touch $(WORKING_DIR)/quartus_bitstream; \
+		# TODO: Copy cached bitstream to working dir \
+		touch $@; \
+	else \
+		echo -e "$(PJP)$(WARNC)[No cached bitstream found, will run implementation]$(DEFC)"; \
+		exit 1; \
+	fi"
+
 $(WORKING_DIR)/quartus_bitstream: $(WORKING_DIR)/quartus_implementation | $(WORKING_DIR) checkenv
 	@echo -e "$(PJP)$(INFOC)[Quartus toolchain - write bitstream begin]$(DEFC) - $(WARNC)[Target: $@] $(DEFC)"
 	@touch $(WORKING_DIR)/quartus_bitstream
@@ -1097,7 +1124,7 @@ $(WORKING_DIR)/quartus_bitstream: $(WORKING_DIR)/quartus_implementation | $(WORK
 	@echo
 
 .PHONY: $(WORKING_DIR)/quartus_program
-$(WORKING_DIR)/quartus_program: $(WORKING_DIR)/quartus_bitstream | $(WORKING_DIR) checkenv
+$(WORKING_DIR)/quartus_program: $(WORKING_DIR)/quartus_bitcache $(WORKING_DIR)/quartus_bitstream | $(WORKING_DIR) checkenv
 	@echo -e "$(PJP)$(INFOC)[Quartus toolchain - programming begin]$(DEFC) - $(WARNC)[Target: $@] $(DEFC)"
 	@touch $(WORKING_DIR)/quartus_program
 	@echo -e "$(PJP)$(INFOC)[Quartus toolchain - programming end]$(DEFC)"
@@ -1132,6 +1159,21 @@ $(WORKING_DIR)/icestorm_implementation: $(WORKING_DIR)/icestorm_synthesis | $(WO
 	@echo -e "$(PJP)$(INFOC)[Icestorm toolchain - implementation end]$(DEFC)"
 	@echo
 
+$(WORKING_DIR)/icestorm_bitcache: $(WORKING_DIR)/icestorm_creation | $(WORKING_DIR) checkenv
+	@if [ -n "$(BITSTREAM_CACHE)" ] && [ -f "$(BITSTREAM_CACHE)" ]; then \
+		echo -e "$(PJP)$(INFOC)[Icestorm toolchain - using cached bitstream]$(DEFC)"; \
+		cp $(BITSTREAM_CACHE) $(WORKING_DIR)/bondmachine.bin; \
+		touch $(WORKING_DIR)/icestorm_synthesis; \
+		touch $(WORKING_DIR)/icestorm_implementation; \
+		touch $(WORKING_DIR)/icestorm_bitstream; \
+		touch $(WORKING_DIR)/icestorm_bitcache; \
+		# TODO: Copy cached bitstream to working dir \
+		touch $@; \
+	else \
+		echo -e "$(PJP)$(WARNC)[No cached bitstream found, will run implementation]$(DEFC)"; \
+		exit 1; \
+	fi
+
 $(WORKING_DIR)/icestorm_bitstream: $(WORKING_DIR)/icestorm_implementation | $(WORKING_DIR) checkenv
 	@echo -e "$(PJP)$(INFOC)[Icestorm toolchain - write bitstream begin]$(DEFC) - $(WARNC)[Target: $@] $(DEFC)"
 	icepack $(WORKING_DIR)/bondmachine.asc $(WORKING_DIR)/bondmachine.bin
@@ -1140,7 +1182,7 @@ $(WORKING_DIR)/icestorm_bitstream: $(WORKING_DIR)/icestorm_implementation | $(WO
 	@echo
 
 .PHONY: $(WORKING_DIR)/icestorm_program
-$(WORKING_DIR)/icestorm_program: $(WORKING_DIR)/icestorm_bitstream | $(WORKING_DIR) checkenv
+$(WORKING_DIR)/icestorm_program: $(WORKING_DIR)/icestorm_bitcache $(WORKING_DIR)/icestorm_bitstream | $(WORKING_DIR) checkenv
 	@echo -e "$(PJP)$(INFOC)[Icestorm toolchain - programming begin]$(DEFC) - $(WARNC)[Target: $@] $(DEFC)"
 ifeq ($(BOARD),icefun)
 	icefunprog /dev/ttyACM0 $(WORKING_DIR)/bondmachine.bin
@@ -1195,17 +1237,60 @@ $(WORKING_DIR)/vivado_implementation: $(WORKING_DIR)/vivado_synthesis | $(WORKIN
 	@echo -e "$(PJP)$(INFOC)[Vivado toolchain - implementation end]$(DEFC)"
 	@echo
 
+$(WORKING_DIR)/vivado_bitcache: $(WORKING_DIR)/$(BOARD).xdc $(WORKING_DIR)/vivado_creation | $(WORKING_DIR) checkenv
+	@if [ -n "$(BITSTREAM_CACHE)" ]; then \
+		echo -e "$(PJP)$(INFOC)[Vivado toolchain - checking cached bitstream]$(DEFC)" ; \
+		echo -e "$(PJP)$(INFOC)[Vivado toolchain - computing HDL MD5]$(DEFC)" ; \
+		HDL_MD5=`cat $(WORKING_DIR)/bondmachine.sv $(WORKING_DIR)/bondmachine.vhd | md5sum | cut -d ' ' -f 1` ; \
+		echo -e "$(PJP)$(INFOC)[Vivado toolchain - cached bitstream MD5: $$HDL_MD5]$(DEFC)" ; \
+		if bitcache get --repo $(BITSTREAM_CACHE) --md5 $$HDL_MD5 ; then \
+			mkdir -p $(WORKING_DIR)/bondmachine/bondmachine.runs/impl_1/; \
+			cp bondmachine_main.bit $(WORKING_DIR)/bondmachine/bondmachine.runs/impl_1/bondmachine_main.bit; \
+			rm -f bondmachine_main.bit ; \
+			echo -e "$(PJP)$(INFOC)[Vivado toolchain - cached bitstream found]$(DEFC)"; \
+			touch $(WORKING_DIR)/vivado_synthesis; \
+			touch $(WORKING_DIR)/vivado_implementation; \
+			touch $(WORKING_DIR)/vivado_bitcache; \
+			touch $(WORKING_DIR)/vivado_bitstream; \
+			touch $@; \
+		else \
+			echo -e "$(PJP)$(WARNC)[No cached bitstream found, will run implementation]$(DEFC)"; \
+		fi ; \
+	else \
+		echo -e "$(PJP)$(WARNC)[No cached bitstream found, will run implementation]$(DEFC)"; \
+	fi
+
+.PHONY: $(WORKING_DIR)/vivado_bitcache_publish
+$(WORKING_DIR)/vivado_bitcache_publish: $(WORKING_DIR)/vivado_bitstream | $(WORKING_DIR) checkenv
+	@if [ -n "$(BITSTREAM_CACHE)" ]; then \
+		echo -e "$(PJP)$(INFOC)[Vivado toolchain - publish bitstream]$(DEFC)" ; \
+		cat $(WORKING_DIR)/bondmachine.sv $(WORKING_DIR)/bondmachine.vhd > bondmachine.hdl ; \
+		HDL_MD5=`cat $(WORKING_DIR)/bondmachine.sv $(WORKING_DIR)/bondmachine.vhd | md5sum | cut -d ' ' -f 1` ; \
+		if bitcache publish --repo $(BITSTREAM_CACHE) --source bondmachine.hdl --bitstream $(WORKING_DIR)/bondmachine/bondmachine.runs/impl_1/bondmachine_main.bit --path $(BOARD)/$(PROJECT_NAME)/$$HDL_MD5/ ; then \
+			echo -e "$(PJP)$(INFOC)[Vivado toolchain - bitstream published]$(DEFC)"; \
+		else \
+			echo -e "$(PJP)$(WARNC)[Vivado toolchain - bitstream publish failed]$(DEFC)"; \
+		fi ; \
+	else \
+		echo -e "$(PJP)$(WARNC)[No bitstream cache specified]$(DEFC)"; \
+	fi
+
+
+
 $(WORKING_DIR)/vivado_bitstream: $(WORKING_DIR)/vivado_implementation | $(WORKING_DIR) checkenv
 	@echo -e "$(PJP)$(INFOC)[Vivado toolchain - write bitstream begin]$(DEFC) - $(WARNC)[Target: $@] $(DEFC)"
 	echo "open_project \"$(CURRENT_DIR)/$(WORKING_DIR)/bondmachine/bondmachine.xpr\"" > $(WORKING_DIR)/vivado-script-bitstream.tcl
 	cat $(ROOTDIR)/$(BOARD)_template_bitstream.tcl >> $(WORKING_DIR)/vivado-script-bitstream.tcl
 	bash -c "cd $(WORKING_DIR) ; vivado -mode batch -source vivado-script-bitstream.tcl"
 	@touch $(WORKING_DIR)/vivado_bitstream
+ifneq ($(BITCACHE_COMMIT),)
+	@make bitcache_publish
+endif	
 	@echo -e "$(PJP)$(INFOC)[Vivado toolchain - write bitstream end]$(DEFC)"
 	@echo
 
 .PHONY: $(WORKING_DIR)/vivado_program
-$(WORKING_DIR)/vivado_program: $(WORKING_DIR)/vivado_bitstream | $(WORKING_DIR) checkenv
+$(WORKING_DIR)/vivado_program: $(WORKING_DIR)/vivado_bitcache $(WORKING_DIR)/vivado_bitstream | $(WORKING_DIR) checkenv
 	@echo -e "$(PJP)$(INFOC)[Vivado toolchain - programming begin]$(DEFC) - $(WARNC)[Target: $@] $(DEFC)"
 	echo "open_project \"$(CURRENT_DIR)/$(WORKING_DIR)/bondmachine/bondmachine.xpr\"" > $(WORKING_DIR)/vivado-script-program.tcl
 	cat $(ROOTDIR)/$(BOARD)_template_program_1.tcl | sed "s/--PEERID--/$(PEER_ID)/" >> $(WORKING_DIR)/vivado-script-program.tcl
@@ -1230,7 +1315,7 @@ endif
 	@echo
 
 .PHONY: $(WORKING_DIR)/vivado_fast_program
-$(WORKING_DIR)/vivado_fast_program: $(WORKING_DIR)/vivado_bitstream | $(WORKING_DIR) checkenv
+$(WORKING_DIR)/vivado_fast_program: $(WORKING_DIR)/vivado_bitcache $(WORKING_DIR)/vivado_bitstream | $(WORKING_DIR) checkenv
 	@echo -e "$(PJP)$(INFOC)[Vivado toolchain - fast programming begin]$(DEFC) - $(WARNC)[Target: $@] $(DEFC)"
 	bash -c "cd $(WORKING_DIR) ; openFPGALoader -c $(CABLE) -d $(BY_SERIAL) bondmachine/bondmachine.runs/impl_1/bondmachine_main.bit"
 	@touch $(WORKING_DIR)/vivado_fast_program
@@ -1299,8 +1384,71 @@ $(WORKING_DIR)/vivado_design_bitstream:  $(WORKING_DIR)/vivado_design_implementa
 	cat $(ROOTDIR)/$(BOARD)_template_design_bitstream.tcl >> $(WORKING_DIR)/vivado-script-design-bitstream.tcl
 	bash -c "cd $(WORKING_DIR) ; vivado -mode batch -source vivado-script-design-bitstream.tcl"
 	@touch $(WORKING_DIR)/vivado_design_bitstream
+ifneq ($(BITCACHE_COMMIT),)
+	@make design_bitcache_publish
+endif
 	@echo -e "$(PJP)$(INFOC)[Vivado toolchain - design bitstream end]$(DEFC)"
 	@echo
+
+$(WORKING_DIR)/vivado_design_bitcache:  $(WORKING_DIR)/$(BOARD).xdc $(WORKING_DIR)/hdl_target | $(WORKING_DIR) checkenv
+	@if [ -n "$(BITSTREAM_CACHE)" ]; then \
+		echo -e "$(PJP)$(INFOC)[Vivado toolchain - checking cached bitstream]$(DEFC)" ; \
+		echo -e "$(PJP)$(INFOC)[Vivado toolchain - computing HDL MD5]$(DEFC)" ; \
+		cat $(WORKING_DIR)/bondmachine.sv $(WORKING_DIR)/bondmachine.vhd > bondmachine.hdl ; \
+		HDL_MD5=`cat $(WORKING_DIR)/bondmachine.sv $(WORKING_DIR)/bondmachine.vhd | md5sum | cut -d ' ' -f 1` ; \
+		cat bondmachine.hdl > bondmachine.plus ; \
+		echo -e "\n// Hardware HWH file" >> bondmachine.plus ; \
+		PLUS_MD5=`md5sum bondmachine.plus | cut -d ' ' -f 1` ; \
+		echo -e "$(PJP)$(INFOC)[Vivado toolchain - cached bitstream MD5: $$HDL_MD5]$(DEFC)" ; \
+		if bitcache get --repo $(BITSTREAM_CACHE) --md5 $$HDL_MD5 ; then \
+			if bitcache get --repo $(BITSTREAM_CACHE) --md5 $$PLUS_MD5 ; then \
+				mkdir -p $(WORKING_DIR)/bmaccelerator/bmaccelerator.runs/impl_1/ ; \
+				cp bm_design_wrapper.bit $(WORKING_DIR)/bmaccelerator/bmaccelerator.runs/impl_1/bm_design_wrapper.bit; \
+				rm -f bm_design_wrapper.bit ; \
+				echo -e "$(PJP)$(INFOC)[Vivado toolchain - cached bitstream found]$(DEFC)"; \
+				mkdir -p $(WORKING_DIR)/bmaccelerator/bmaccelerator.gen/sources_1/bd/bm_design/hw_handoff/ ; \
+				cp bm_design.hwh $(WORKING_DIR)/bmaccelerator/bmaccelerator.gen/sources_1/bd/bm_design/hw_handoff/bm_design.hwh; \
+				rm -f bm_design.hwh ; \
+				echo -e "$(PJP)$(INFOC)[Vivado toolchain - cached HWH file found]$(DEFC)"; \
+				touch $(WORKING_DIR)/vivado_accelerator; \
+				touch $(WORKING_DIR)/vivado_design_creation; \
+				touch $(WORKING_DIR)/vivado_design_synthesis; \
+				touch $(WORKING_DIR)/vivado_design_implementation; \
+				touch $(WORKING_DIR)/vivado_design_bitcache; \
+				touch $(WORKING_DIR)/vivado_design_bitstream; \
+				touch $@; \
+			else \
+				echo -e "$(PJP)$(WARNC)[No cached HWH file found]$(DEFC)"; \
+			fi ; \
+		else \
+			echo -e "$(PJP)$(WARNC)[No cached bitstream found, will run implementation]$(DEFC)"; \
+		fi ; \
+	else \
+		echo -e "$(PJP)$(WARNC)[No cached bitstream found, will run implementation]$(DEFC)"; \
+	fi
+
+.PHONY: $(WORKING_DIR)/vivado_design_bitcache_publish
+$(WORKING_DIR)/vivado_design_bitcache_publish: $(WORKING_DIR)/vivado_design_bitstream | $(WORKING_DIR) checkenv
+	@if [ -n "$(BITSTREAM_CACHE)" ]; then \
+		echo -e "$(PJP)$(INFOC)[Vivado toolchain - publish bitstream]$(DEFC)" ; \
+		cat $(WORKING_DIR)/bondmachine.sv $(WORKING_DIR)/bondmachine.vhd > bondmachine.hdl ; \
+		HDL_MD5=`cat $(WORKING_DIR)/bondmachine.sv $(WORKING_DIR)/bondmachine.vhd | md5sum | cut -d ' ' -f 1` ; \
+		cat bondmachine.hdl > bondmachine.plus ; \
+		echo -e "\n// Hardware HWH file" >> bondmachine.plus ; \
+		PLUS_MD5=`md5sum bondmachine.plus | cut -d ' ' -f 1` ; \
+		if bitcache publish --repo $(BITSTREAM_CACHE) --source bondmachine.hdl --bitstream $(WORKING_DIR)/bmaccelerator/bmaccelerator.runs/impl_1/bm_design_wrapper.bit --path $(BOARD)/$(PROJECT_NAME)/$$HDL_MD5/ ; then \
+			echo -e "$(PJP)$(INFOC)[Vivado toolchain - bitstream published]$(DEFC)"; \
+		else \
+			echo -e "$(PJP)$(WARNC)[Vivado toolchain - bitstream publish failed]$(DEFC)"; \
+		fi ; \
+		if bitcache publish --repo $(BITSTREAM_CACHE) --source bondmachine.plus --bitstream $$(find | grep hwh) --path $(BOARD)/$(PROJECT_NAME)/$$PLUS_MD5/ ; then \
+			echo -e "$(PJP)$(INFOC)[Vivado toolchain - HWH File published]$(DEFC)"; \
+		else \
+			echo -e "$(PJP)$(WARNC)[Vivado toolchain - HWH File publish failed]$(DEFC)"; \
+		fi ; \
+	else \
+		echo -e "$(PJP)$(WARNC)[No bitstream cache specified]$(DEFC)"; \
+	fi
 
 $(WORKING_DIR)/vivado_export_hardware:  $(WORKING_DIR)/vivado_design_bitstream | $(WORKING_DIR) checkenv
 	@echo -e "$(PJP)$(INFOC)[Vivado toolchain - export hardware begin]$(DEFC) - $(WARNC)[Target: $@] $(DEFC)"
