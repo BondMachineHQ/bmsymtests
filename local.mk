@@ -10,7 +10,9 @@ BASM_LIB_FILES=library/*basm
 MAPFILE=zedboard_maps.json
 SHOWARGS=-dot-detail 5
 SHOWRENDERER=dot -Tpng > bondmachine.png
-EXTRACLEAN=*.csv *.seq num_outputs.txt bmapi.json bondmachine.png statistics.json zedboard* source.mk out.basm
+EXTRACLEAN=*.csv *.seq num_outputs.txt bmapi.json bondmachine.png statistics.json zedboard* source.mk out.basm bondmachine.hdl bondmachine.plus
+BITSTREAM_CACHE=git@github.com:BondMachineHQ/bitcachedata.git
+BITCACHE_COMMIT=yes
 include bmapi.mk
 include deploy.mk
 include simbatch.mk
