@@ -1243,7 +1243,7 @@ $(WORKING_DIR)/vivado_bitcache: $(WORKING_DIR)/$(BOARD).xdc $(WORKING_DIR)/vivad
 		echo -e "$(PJP)$(INFOC)[Vivado toolchain - computing HDL MD5]$(DEFC)" ; \
 		HDL_MD5=`cat $(WORKING_DIR)/bondmachine.sv $(WORKING_DIR)/bondmachine.vhd | md5sum | cut -d ' ' -f 1` ; \
 		echo -e "$(PJP)$(INFOC)[Vivado toolchain - cached bitstream MD5: $$HDL_MD5]$(DEFC)" ; \
-		if bitcache get --repo $(BITSTREAM_CACHE) --md5 $$HDL_MD5 ; then \
+		if bitcache get $(BITSTREAM_CACHE_ARGS) --repo $(BITSTREAM_CACHE) --md5 $$HDL_MD5 ; then \
 			mkdir -p $(WORKING_DIR)/bondmachine/bondmachine.runs/impl_1/; \
 			cp bondmachine_main.bit $(WORKING_DIR)/bondmachine/bondmachine.runs/impl_1/bondmachine_main.bit; \
 			rm -f bondmachine_main.bit ; \
@@ -1266,7 +1266,7 @@ $(WORKING_DIR)/vivado_bitcache_publish: $(WORKING_DIR)/vivado_bitstream | $(WORK
 		echo -e "$(PJP)$(INFOC)[Vivado toolchain - publish bitstream]$(DEFC)" ; \
 		cat $(WORKING_DIR)/bondmachine.sv $(WORKING_DIR)/bondmachine.vhd > bondmachine.hdl ; \
 		HDL_MD5=`cat $(WORKING_DIR)/bondmachine.sv $(WORKING_DIR)/bondmachine.vhd | md5sum | cut -d ' ' -f 1` ; \
-		if bitcache publish --repo $(BITSTREAM_CACHE) --source bondmachine.hdl --bitstream $(WORKING_DIR)/bondmachine/bondmachine.runs/impl_1/bondmachine_main.bit --path $(BOARD)/$(PROJECT_NAME)/$$HDL_MD5/ ; then \
+		if bitcache publish $(BITSTREAM_CACHE_ARGS) --repo $(BITSTREAM_CACHE) --source bondmachine.hdl --bitstream $(WORKING_DIR)/bondmachine/bondmachine.runs/impl_1/bondmachine_main.bit --path $(BOARD)/$(PROJECT_NAME)/$$HDL_MD5/ ; then \
 			echo -e "$(PJP)$(INFOC)[Vivado toolchain - bitstream published]$(DEFC)"; \
 		else \
 			echo -e "$(PJP)$(WARNC)[Vivado toolchain - bitstream publish failed]$(DEFC)"; \
@@ -1400,8 +1400,8 @@ $(WORKING_DIR)/vivado_design_bitcache:  $(WORKING_DIR)/$(BOARD).xdc $(WORKING_DI
 		echo -e "\n// Hardware HWH file" >> bondmachine.plus ; \
 		PLUS_MD5=`md5sum bondmachine.plus | cut -d ' ' -f 1` ; \
 		echo -e "$(PJP)$(INFOC)[Vivado toolchain - cached bitstream MD5: $$HDL_MD5]$(DEFC)" ; \
-		if bitcache get --repo $(BITSTREAM_CACHE) --md5 $$HDL_MD5 ; then \
-			if bitcache get --repo $(BITSTREAM_CACHE) --md5 $$PLUS_MD5 ; then \
+		if bitcache get $(BITSTREAM_CACHE_ARGS) --repo $(BITSTREAM_CACHE) --md5 $$HDL_MD5 ; then \
+			if bitcache get $(BITSTREAM_CACHE_ARGS) --repo $(BITSTREAM_CACHE) --md5 $$PLUS_MD5 ; then \
 				mkdir -p $(WORKING_DIR)/bmaccelerator/bmaccelerator.runs/impl_1/ ; \
 				cp bm_design_wrapper.bit $(WORKING_DIR)/bmaccelerator/bmaccelerator.runs/impl_1/bm_design_wrapper.bit; \
 				rm -f bm_design_wrapper.bit ; \
@@ -1436,12 +1436,12 @@ $(WORKING_DIR)/vivado_design_bitcache_publish: $(WORKING_DIR)/vivado_design_bits
 		cat bondmachine.hdl > bondmachine.plus ; \
 		echo -e "\n// Hardware HWH file" >> bondmachine.plus ; \
 		PLUS_MD5=`md5sum bondmachine.plus | cut -d ' ' -f 1` ; \
-		if bitcache publish --repo $(BITSTREAM_CACHE) --source bondmachine.hdl --bitstream $(WORKING_DIR)/bmaccelerator/bmaccelerator.runs/impl_1/bm_design_wrapper.bit --path $(BOARD)/$(PROJECT_NAME)/$$HDL_MD5/ ; then \
+		if bitcache publish $(BITSTREAM_CACHE_ARGS) --repo $(BITSTREAM_CACHE) --source bondmachine.hdl --bitstream $(WORKING_DIR)/bmaccelerator/bmaccelerator.runs/impl_1/bm_design_wrapper.bit --path $(BOARD)/$(PROJECT_NAME)/$$HDL_MD5/ ; then \
 			echo -e "$(PJP)$(INFOC)[Vivado toolchain - bitstream published]$(DEFC)"; \
 		else \
 			echo -e "$(PJP)$(WARNC)[Vivado toolchain - bitstream publish failed]$(DEFC)"; \
 		fi ; \
-		if bitcache publish --repo $(BITSTREAM_CACHE) --source bondmachine.plus --bitstream $$(find | grep hwh) --path $(BOARD)/$(PROJECT_NAME)/$$PLUS_MD5/ ; then \
+		if bitcache publish $(BITSTREAM_CACHE_ARGS) --repo $(BITSTREAM_CACHE) --source bondmachine.plus --bitstream $$(find | grep hwh) --path $(BOARD)/$(PROJECT_NAME)/$$PLUS_MD5/ ; then \
 			echo -e "$(PJP)$(INFOC)[Vivado toolchain - HWH File published]$(DEFC)"; \
 		else \
 			echo -e "$(PJP)$(WARNC)[Vivado toolchain - HWH File publish failed]$(DEFC)"; \
