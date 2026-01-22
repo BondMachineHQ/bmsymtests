@@ -31,6 +31,7 @@ def plot_stats(gs,fragment):
     ax1.set_xlabel('precision')
     ax1.set_ylabel('error')
     ax1.grid(True, which='both', ls='--', lw=0.5)
+    plt.xticks(range(1, max(x)+1, max(1, max(x)//20)))
 
     ax2 = ax1.twinx()
     ax2.plot(x, stats.bsimlatency, label='bsim latency', color='#7b2cbf', marker='s')
