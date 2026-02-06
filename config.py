@@ -15,6 +15,7 @@ runBmsimTests=False
 storeBM=False
 
 benchcore=False
+data_type="float32"
 showLatencyDistribution=False
 regexFilter=""
 

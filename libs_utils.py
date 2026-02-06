@@ -30,6 +30,18 @@ def csv2sequence(csvFile,seqFile,pref):
 					if token!="" and token!='\n':
 						g.write(token+'\n')
 
+def csv2sequenceunsigned(csvFile,seqFile,pref):
+	with open(csvFile, 'r') as f:
+		lines = f.readlines()
+		with open(seqFile, 'w') as g:
+			for line in lines:
+				for token in line.split(','):
+					if token.startswith(pref):
+						token = token[len(pref):]
+					token = token.strip()
+					if token!="" and token!='\n':
+						g.write(token+'\n')
+
 def sequence2csv(seqFile,csvFile,dataWidth,pref):
 	with open(seqFile, 'r') as f:
 		lines = f.readlines()
