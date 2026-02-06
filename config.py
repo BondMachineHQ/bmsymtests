@@ -16,6 +16,7 @@ storeBM=False
 
 benchcore=False
 data_type="float32"
+unsigned_base=False
 showLatencyDistribution=False
 regexFilter=""
 
